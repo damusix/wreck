@@ -1735,7 +1735,7 @@ describe('Shortcut', () => {
         expect(err.message).toBe('Response Error: 400 Bad Request');
         expect(err.data.isResponseError).toBe(true);
         expect(err.data.headers).toMatchObject({ 'x-custom': 'yes' });
-        expect(err.data.payload).toEqual({ details: 'failed' });
+        expect(err.data.payload).toStrictEqual({ details: 'failed' });
         expect(err.data.res.statusCode).toBe(400);
     });
 });
@@ -1885,7 +1885,7 @@ describe('json', () => {
         const { res, payload } = await Wreck.get(`http://localhost:${server.address().port}`, options);
         expect(res.statusCode).toBe(200);
         expect(payload).not.toBe(null);
-        expect(payload).toEqual({ foo: 'bar' });
+        expect(payload).toStrictEqual({ foo: 'bar' });
     });
 
     it('will error on invalid json received in "force" mode', async () => {
@@ -1914,7 +1914,7 @@ describe('json', () => {
         const { res, payload } = await Wreck.get(`http://localhost:${server.address().port}`, options);
         expect(res.statusCode).toBe(200);
         expect(payload).not.toBe(null);
-        expect(payload).toEqual({ foo: 'bar' });
+        expect(payload).toStrictEqual({ foo: 'bar' });
     });
 
     it('will error on invalid content-type header in "strict" mode', async () => {
