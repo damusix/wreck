@@ -14,22 +14,20 @@ import Recorder from './recorder.js';
 import Tap from './tap.js';
 
 
-const internals = {
-    jsonRegex: /^application\/([a-z0-9.]*[+-]json|json)$/,
-    shallowOptions: ['agent', 'agents', 'beforeRedirect', 'payload', 'redirected'],
-    httpOptions: ['secureProtocol', 'ciphers', 'lookup', 'family', 'hints']
-};
+const jsonRegex = /^application\/([a-z0-9.]*[+-]json|json)$/;
+const shallowOptions = ['agent', 'agents', 'beforeRedirect', 'payload', 'redirected'];
+const httpOptions = ['secureProtocol', 'ciphers', 'lookup', 'family', 'hints'];
 
 
 // New instance is exported as default export
 
-internals.Client = class {
+class Client {
 
     constructor(options = {}) {
 
         Hoek.assert(!options.agents || options.agents.https && options.agents.http && options.agents.httpsAllowUnauthorized, 'Option agents must include "http", "https", and "httpsAllowUnauthorized"');
 
-        this._defaults = Hoek.clone(options, { shallow: internals.shallowOptions });
+        this._defaults = Hoek.clone(options, { shallow: shallowOptions });
 
         this.agents = this._defaults.agents || {
             https: new Https.Agent({ maxSockets: Infinity }),
@@ -46,19 +44,19 @@ internals.Client = class {
 
         Hoek.assert(options && typeof options === 'object', 'options must be provided to defaults');
 
-        options = Hoek.applyToDefaults(this._defaults, options, { shallow: internals.shallowOptions });
-        return new internals.Client(options);
+        options = Hoek.applyToDefaults(this._defaults, options, { shallow: shallowOptions });
+        return new Client(options);
     }
 
     request(method, url, options = {}) {
 
         try {
-            options = Hoek.applyToDefaults(this._defaults, options, { shallow: internals.shallowOptions });
+            options = Hoek.applyToDefaults(this._defaults, options, { shallow: shallowOptions });
 
             Hoek.assert(options.payload === undefined || typeof options.payload === 'string' || typeof options.payload === 'object', 'options.payload must be a string, a Buffer, a Stream, or an Object');
-            Hoek.assert(internals.isNullOrUndefined(options.agent) || typeof options.rejectUnauthorized !== 'boolean', 'options.agent cannot be set to an Agent at the same time as options.rejectUnauthorized is set');
-            Hoek.assert(internals.isNullOrUndefined(options.beforeRedirect) || typeof options.beforeRedirect === 'function', 'options.beforeRedirect must be a function');
-            Hoek.assert(internals.isNullOrUndefined(options.redirected) || typeof options.redirected === 'function', 'options.redirected must be a function');
+            Hoek.assert(isNullOrUndefined(options.agent) || typeof options.rejectUnauthorized !== 'boolean', 'options.agent cannot be set to an Agent at the same time as options.rejectUnauthorized is set');
+            Hoek.assert(isNullOrUndefined(options.beforeRedirect) || typeof options.beforeRedirect === 'function', 'options.beforeRedirect must be a function');
+            Hoek.assert(isNullOrUndefined(options.redirected) || typeof options.redirected === 'function', 'options.redirected must be a function');
             Hoek.assert(options.gunzip === undefined || typeof options.gunzip === 'boolean' || options.gunzip === 'force', 'options.gunzip must be a boolean or "force"');
         }
         catch (err) {
@@ -66,25 +64,23 @@ internals.Client = class {
         }
 
         if (options.baseUrl) {
-            url = internals.resolveUrl(options.baseUrl, url);
+            url = resolveUrl(options.baseUrl, url);
             delete options.baseUrl;
         }
 
         const relay = {};
         const req = this._request(method, url, options, relay);
-        const promise = new Promise((resolve, reject) => {
+        const { promise, resolve, reject } = Promise.withResolvers();
 
-            relay.callback = (err, res) => {
+        relay.callback = (err, res) => {
 
-                if (err) {
-                    reject(err);
-                    return;
-                }
-
-                resolve(res);
+            if (err) {
+                reject(err);
                 return;
-            };
-        });
+            }
+
+            resolve(res);
+        };
 
         promise.req = req;
         return promise;
@@ -97,7 +93,7 @@ internals.Client = class {
             uri.socketPath = options.socketPath;
 
             const parsedUri = new Url.URL(url, `unix://${options.socketPath}`);
-            internals.applyUrlToOptions(uri, {
+            applyUrlToOptions(uri, {
                 host: '',                               // host must be empty according to https://tools.ietf.org/html/rfc2616#section-14.23
                 protocol: 'http:',
                 hash: parsedUri.hash,
@@ -110,7 +106,7 @@ internals.Client = class {
         else {
             uri.setHost = false;
             const parsedUri = new Url.URL(url);
-            internals.applyUrlToOptions(uri, parsedUri);
+            applyUrlToOptions(uri, parsedUri);
         }
 
         uri.method = method.toUpperCase();
@@ -143,7 +139,7 @@ internals.Client = class {
             uri.headers['accept-encoding'] = 'gzip';
         }
 
-        const payloadSupported = uri.method !== 'GET' && uri.method !== 'HEAD' && !internals.isNullOrUndefined(options.payload);
+        const payloadSupported = uri.method !== 'GET' && uri.method !== 'HEAD' && !isNullOrUndefined(options.payload);
         if (payloadSupported &&
             (typeof options.payload === 'string' || Buffer.isBuffer(options.payload)) &&
             !usedHeaders.has('content-length')) {
@@ -151,14 +147,14 @@ internals.Client = class {
             uri.headers['content-length'] = Buffer.isBuffer(options.payload) ? options.payload.length : Buffer.byteLength(options.payload);
         }
 
-        let redirects = options.hasOwnProperty('redirects') ? options.redirects : false;        // Needed to allow 0 as valid value when passed recursively
+        let redirects = Object.hasOwn(options, 'redirects') ? options.redirects : false;        // Needed to allow 0 as valid value when passed recursively
 
         _trace = _trace ?? [];
         _trace.push({ method: uri.method, url });
 
         const client = uri.protocol === 'https:' ? Https : Http;
 
-        for (const option of internals.httpOptions) {
+        for (const option of httpOptions) {
             if (options[option] !== undefined) {
                 uri[option] = options[option];
             }
@@ -212,7 +208,7 @@ internals.Client = class {
             // Pass-through response
 
             const statusCode = res.statusCode;
-            const redirectMethod = internals.redirectMethod(statusCode, uri.method, options);
+            const redirectMethod = resolveRedirectMethod(statusCode, uri.method, options);
 
             if (redirects === false ||
                 !redirectMethod) {
@@ -237,7 +233,7 @@ internals.Client = class {
                 location = Url.resolve(uri.href, location);
             }
 
-            const redirectOptions = Hoek.clone(options, { shallow: internals.shallowOptions });
+            const redirectOptions = Hoek.clone(options, { shallow: shallowOptions });
             redirectOptions.payload = shadow ?? options.payload;                                    // shadow must be ready at this point if set
             redirectOptions.redirects = --redirects;
             if (timeoutId) {
@@ -325,7 +321,7 @@ internals.Client = class {
                     stream = options.payload.pipe(collector);
                 }
 
-                internals.deferPipeUntilSocketConnects(req, stream);
+                deferPipeUntilSocketConnects(req, stream);
                 return req;
             }
 
@@ -364,7 +360,7 @@ internals.Client = class {
 
     _read(res, options, callback) {
 
-        options = Hoek.applyToDefaults(this._defaults, options, { shallow: internals.shallowOptions });
+        options = Hoek.applyToDefaults(this._defaults, options, { shallow: shallowOptions });
 
         // Finish once
 
@@ -391,7 +387,7 @@ internals.Client = class {
             // Parse JSON
 
             if (options.json === 'force') {
-                return internals.tryParseBuffer(buffer, callback);
+                return tryParseBuffer(buffer, callback);
             }
 
             // 'strict' or true
@@ -399,7 +395,7 @@ internals.Client = class {
             const contentType = res.headers?.['content-type'] ?? '';
             const mime = contentType.split(';')[0].trim().toLowerCase();
 
-            if (!internals.jsonRegex.test(mime)) {
+            if (!jsonRegex.test(mime)) {
                 if (options.json === 'strict') {
                     return callback(Boom.notAcceptable('The content-type is not JSON compatible'));
                 }
@@ -407,7 +403,7 @@ internals.Client = class {
                 return callback(null, buffer);
             }
 
-            return internals.tryParseBuffer(buffer, callback);
+            return tryParseBuffer(buffer, callback);
         };
 
         const finishOnce = Hoek.once(finish);
@@ -571,12 +567,12 @@ internals.Client = class {
 
         throw new Boom.Boom(`Response Error: ${res.statusCode} ${res.statusMessage}`, { statusCode: res.statusCode, data });
     }
-};
+}
 
 
 // baseUrl needs to end in a trailing / if it contains paths that need to be preserved
 
-internals.resolveUrl = function (baseUrl, path) {
+function resolveUrl(baseUrl, path) {
 
     if (!path) {
         return baseUrl;
@@ -585,10 +581,10 @@ internals.resolveUrl = function (baseUrl, path) {
     // Will default to path if it's not a relative URL
     const url = new Url.URL(path, baseUrl);
     return Url.format(url);
-};
+}
 
 
-internals.deferPipeUntilSocketConnects = function (req, stream) {
+function deferPipeUntilSocketConnects(req, stream) {
 
     const onSocket = (socket) => {
 
@@ -612,10 +608,10 @@ internals.deferPipeUntilSocketConnects = function (req, stream) {
 
     req.once('socket', onSocket);
     stream.on('error', onStreamError);
-};
+}
 
 
-internals.redirectMethod = function (code, method, options) {
+function resolveRedirectMethod(code, method, options) {
 
     switch (code) {
         case 301:
@@ -635,10 +631,10 @@ internals.redirectMethod = function (code, method, options) {
     }
 
     return null;
-};
+}
 
 
-internals.tryParseBuffer = function (buffer, next) {
+function tryParseBuffer(buffer, next) {
 
     if (buffer.length === 0) {
         return next(null, null);
@@ -653,10 +649,10 @@ internals.tryParseBuffer = function (buffer, next) {
     }
 
     return next(null, payload);
-};
+}
 
 
-internals.applyUrlToOptions = (options, url) => {
+function applyUrlToOptions(options, url) {
 
     options.host = url.host;
     options.origin = url.origin;
@@ -679,8 +675,8 @@ internals.applyUrlToOptions = (options, url) => {
     }
 
     return options;
-};
+}
 
-internals.isNullOrUndefined = (val) => [null, undefined].includes(val);
+const isNullOrUndefined = (val) => [null, undefined].includes(val);
 
-export default new internals.Client();
+export default new Client();

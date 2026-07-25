@@ -3,10 +3,7 @@ import * as Stream from 'node:stream';
 import Payload from './payload.js';
 
 
-const internals = {};
-
-
-internals.Tap = class extends Stream.Transform {
+class Tap extends Stream.Transform {
 
     constructor() {
 
@@ -24,6 +21,6 @@ internals.Tap = class extends Stream.Transform {
 
         return new Payload(this.buffers);
     }
-};
+}
 
-export default internals.Tap;
+export default Tap;

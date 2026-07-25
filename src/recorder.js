@@ -3,10 +3,7 @@ import * as Stream from 'node:stream';
 import * as Boom from '@hapi/boom';
 
 
-const internals = {};
-
-
-internals.Recorder = class extends Stream.Writable {
+class Recorder extends Stream.Writable {
 
     constructor(options) {
 
@@ -35,6 +32,6 @@ internals.Recorder = class extends Stream.Writable {
         const buffer = (this.buffers.length === 0 ? Buffer.alloc(0) : (this.buffers.length === 1 ? this.buffers[0] : Buffer.concat(this.buffers, this.length)));
         return buffer;
     }
-};
+}
 
-export default internals.Recorder;
+export default Recorder;

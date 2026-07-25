@@ -1,10 +1,7 @@
 import * as Stream from 'node:stream';
 
 
-const internals = {};
-
-
-internals.Payload = class extends Stream.Readable {
+class Payload extends Stream.Readable {
 
     constructor(payload, encoding) {
 
@@ -33,6 +30,6 @@ internals.Payload = class extends Stream.Readable {
             this.push(null);
         }
     }
-};
+}
 
-export default internals.Payload;
+export default Payload;
