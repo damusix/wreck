@@ -13,26 +13,25 @@ import Payload from './payload.js';
 import Recorder from './recorder.js';
 import Tap from './tap.js';
 
-
 const jsonRegex = /^application\/([a-z0-9.]*[+-]json|json)$/;
 const shallowOptions = ['agent', 'agents', 'beforeRedirect', 'payload', 'redirected'];
 const httpOptions = ['secureProtocol', 'ciphers', 'lookup', 'family', 'hints'];
 
-
 // New instance is exported as default export
 
 class Client {
-
     constructor(options = {}) {
-
-        Hoek.assert(!options.agents || options.agents.https && options.agents.http && options.agents.httpsAllowUnauthorized, 'Option agents must include "http", "https", and "httpsAllowUnauthorized"');
+        Hoek.assert(
+            !options.agents || (options.agents.https && options.agents.http && options.agents.httpsAllowUnauthorized),
+            'Option agents must include "http", "https", and "httpsAllowUnauthorized"',
+        );
 
         this._defaults = Hoek.clone(options, { shallow: shallowOptions });
 
         this.agents = this._defaults.agents || {
             https: new Https.Agent({ maxSockets: Infinity }),
             http: new Http.Agent({ maxSockets: Infinity }),
-            httpsAllowUnauthorized: new Https.Agent({ maxSockets: Infinity, rejectUnauthorized: false })
+            httpsAllowUnauthorized: new Https.Agent({ maxSockets: Infinity, rejectUnauthorized: false }),
         };
 
         if (this._defaults.events) {
@@ -41,7 +40,6 @@ class Client {
     }
 
     defaults(options) {
-
         Hoek.assert(options && typeof options === 'object', 'options must be provided to defaults');
 
         options = Hoek.applyToDefaults(this._defaults, options, { shallow: shallowOptions });
@@ -49,17 +47,32 @@ class Client {
     }
 
     request(method, url, options = {}) {
-
         try {
             options = Hoek.applyToDefaults(this._defaults, options, { shallow: shallowOptions });
 
-            Hoek.assert(options.payload === undefined || typeof options.payload === 'string' || typeof options.payload === 'object', 'options.payload must be a string, a Buffer, a Stream, or an Object');
-            Hoek.assert(isNullOrUndefined(options.agent) || typeof options.rejectUnauthorized !== 'boolean', 'options.agent cannot be set to an Agent at the same time as options.rejectUnauthorized is set');
-            Hoek.assert(isNullOrUndefined(options.beforeRedirect) || typeof options.beforeRedirect === 'function', 'options.beforeRedirect must be a function');
-            Hoek.assert(isNullOrUndefined(options.redirected) || typeof options.redirected === 'function', 'options.redirected must be a function');
-            Hoek.assert(options.gunzip === undefined || typeof options.gunzip === 'boolean' || options.gunzip === 'force', 'options.gunzip must be a boolean or "force"');
-        }
-        catch (err) {
+            Hoek.assert(
+                options.payload === undefined ||
+                    typeof options.payload === 'string' ||
+                    typeof options.payload === 'object',
+                'options.payload must be a string, a Buffer, a Stream, or an Object',
+            );
+            Hoek.assert(
+                isNullOrUndefined(options.agent) || typeof options.rejectUnauthorized !== 'boolean',
+                'options.agent cannot be set to an Agent at the same time as options.rejectUnauthorized is set',
+            );
+            Hoek.assert(
+                isNullOrUndefined(options.beforeRedirect) || typeof options.beforeRedirect === 'function',
+                'options.beforeRedirect must be a function',
+            );
+            Hoek.assert(
+                isNullOrUndefined(options.redirected) || typeof options.redirected === 'function',
+                'options.redirected must be a function',
+            );
+            Hoek.assert(
+                options.gunzip === undefined || typeof options.gunzip === 'boolean' || options.gunzip === 'force',
+                'options.gunzip must be a boolean or "force"',
+            );
+        } catch (err) {
             return Promise.reject(err);
         }
 
@@ -73,7 +86,6 @@ class Client {
         const { promise, resolve, reject } = Promise.withResolvers();
 
         relay.callback = (err, res) => {
-
             if (err) {
                 reject(err);
                 return;
@@ -87,23 +99,21 @@ class Client {
     }
 
     _request(method, url, options, relay, _trace) {
-
         const uri = {};
         if (options.socketPath) {
             uri.socketPath = options.socketPath;
 
             const parsedUri = new Url.URL(url, `unix://${options.socketPath}`);
             applyUrlToOptions(uri, {
-                host: '',                               // host must be empty according to https://tools.ietf.org/html/rfc2616#section-14.23
+                host: '', // host must be empty according to https://tools.ietf.org/html/rfc2616#section-14.23
                 protocol: 'http:',
                 hash: parsedUri.hash,
                 search: parsedUri.search,
                 searchParams: parsedUri.searchParams,
                 pathname: parsedUri.pathname,
-                href: parsedUri.href
+                href: parsedUri.href,
             });
-        }
-        else {
+        } else {
             uri.setHost = false;
             const parsedUri = new Url.URL(url);
             applyUrlToOptions(uri, parsedUri);
@@ -126,28 +136,34 @@ class Client {
             uri.headers.host = uri.host;
         }
 
-        if (options.payload && typeof options.payload === 'object' && !(options.payload instanceof Stream.default) && !Buffer.isBuffer(options.payload)) {
+        if (
+            options.payload &&
+            typeof options.payload === 'object' &&
+            !(options.payload instanceof Stream.default) &&
+            !Buffer.isBuffer(options.payload)
+        ) {
             options.payload = JSON.stringify(options.payload);
             if (!usedHeaders.has('content-type')) {
                 uri.headers['content-type'] = 'application/json';
             }
         }
 
-        if (options.gunzip &&
-            !usedHeaders.has('accept-encoding')) {
-
+        if (options.gunzip && !usedHeaders.has('accept-encoding')) {
             uri.headers['accept-encoding'] = 'gzip';
         }
 
         const payloadSupported = uri.method !== 'GET' && uri.method !== 'HEAD' && !isNullOrUndefined(options.payload);
-        if (payloadSupported &&
+        if (
+            payloadSupported &&
             (typeof options.payload === 'string' || Buffer.isBuffer(options.payload)) &&
-            !usedHeaders.has('content-length')) {
-
-            uri.headers['content-length'] = Buffer.isBuffer(options.payload) ? options.payload.length : Buffer.byteLength(options.payload);
+            !usedHeaders.has('content-length')
+        ) {
+            uri.headers['content-length'] = Buffer.isBuffer(options.payload)
+                ? options.payload.length
+                : Buffer.byteLength(options.payload);
         }
 
-        let redirects = Object.hasOwn(options, 'redirects') ? options.redirects : false;        // Needed to allow 0 as valid value when passed recursively
+        let redirects = Object.hasOwn(options, 'redirects') ? options.redirects : false; // Needed to allow 0 as valid value when passed recursively
 
         _trace = _trace ?? [];
         _trace.push({ method: uri.method, url });
@@ -160,17 +176,11 @@ class Client {
             }
         }
 
-        if (options.rejectUnauthorized !== undefined &&
-            uri.protocol === 'https:') {
-
+        if (options.rejectUnauthorized !== undefined && uri.protocol === 'https:') {
             uri.agent = options.rejectUnauthorized ? this.agents.https : this.agents.httpsAllowUnauthorized;
-        }
-        else if (options.agent ||
-            options.agent === false) {
-
+        } else if (options.agent || options.agent === false) {
             uri.agent = options.agent;
-        }
-        else {
+        } else {
             uri.agent = uri.protocol === 'https:' ? this.agents.https : this.agents.http;
         }
 
@@ -181,17 +191,15 @@ class Client {
 
         this._emit('request', req);
 
-        let shadow = null;                                                                      // A copy of the streamed request payload when redirects are enabled
+        let shadow = null; // A copy of the streamed request payload when redirects are enabled
         let timeoutId;
 
         const onError = (err) => {
-
             err.trace = _trace;
             return finishOnce(Boom.badGateway('Client request error', err));
         };
 
         const onAbort = () => {
-
             if (!req.socket) {
                 // Fake an ECONNRESET error on early abort
 
@@ -204,15 +212,12 @@ class Client {
         req.once('error', onError);
 
         const onResponse = (res) => {
-
             // Pass-through response
 
             const statusCode = res.statusCode;
             const redirectMethod = resolveRedirectMethod(statusCode, uri.method, options);
 
-            if (redirects === false ||
-                !redirectMethod) {
-
+            if (redirects === false || !redirectMethod) {
                 return finishOnce(null, res);
             }
 
@@ -234,12 +239,12 @@ class Client {
             }
 
             const redirectOptions = Hoek.clone(options, { shallow: shallowOptions });
-            redirectOptions.payload = shadow ?? options.payload;                                    // shadow must be ready at this point if set
+            redirectOptions.payload = shadow ?? options.payload; // shadow must be ready at this point if set
             redirectOptions.redirects = --redirects;
             if (timeoutId) {
                 clearTimeout(timeoutId);
                 const elapsed = Date.now() - start;
-                redirectOptions.timeout = (redirectOptions.timeout - elapsed).toString();           // stringify to not drop timeout when === 0
+                redirectOptions.timeout = (redirectOptions.timeout - elapsed).toString(); // stringify to not drop timeout when === 0
             }
 
             // When redirecting to a new hostname, remove the authorization and cookie headers
@@ -256,13 +261,18 @@ class Client {
             }
 
             const followRedirect = (err) => {
-
                 if (err) {
                     err.trace = _trace;
                     return finishOnce(Boom.badGateway('Invalid redirect', err));
                 }
 
-                const redirectReq = this._request(redirectMethod, location, redirectOptions, { callback: finishOnce }, _trace);
+                const redirectReq = this._request(
+                    redirectMethod,
+                    location,
+                    redirectOptions,
+                    { callback: finishOnce },
+                    _trace,
+                );
                 if (options.redirected) {
                     options.redirected(statusCode, location, redirectReq);
                 }
@@ -272,13 +282,19 @@ class Client {
                 return followRedirect();
             }
 
-            return options.beforeRedirect(redirectMethod, statusCode, location, res.headers, redirectOptions, followRedirect);
+            return options.beforeRedirect(
+                redirectMethod,
+                statusCode,
+                location,
+                res.headers,
+                redirectOptions,
+                followRedirect,
+            );
         };
 
         // Register handlers
 
         const finish = (err, res) => {
-
             if (err) {
                 req.abort();
             }
@@ -314,7 +330,6 @@ class Client {
                 if (redirects) {
                     const collector = new Tap();
                     collector.once('finish', () => {
-
                         shadow = collector.collect();
                     });
 
@@ -335,18 +350,14 @@ class Client {
     }
 
     _emit(...args) {
-
         if (this.events) {
             this.events.emit(...args);
         }
     }
 
     read(res, options = {}) {
-
         return new Promise((resolve, reject) => {
-
             this._read(res, options, (err, payload) => {
-
                 if (err) {
                     reject(err);
                     return;
@@ -359,7 +370,6 @@ class Client {
     }
 
     _read(res, options, callback) {
-
         options = Hoek.applyToDefaults(this._defaults, options, { shallow: shallowOptions });
 
         // Finish once
@@ -367,7 +377,6 @@ class Client {
         let clientTimeoutId = null;
 
         const finish = (err, buffer) => {
-
             clearTimeout(clientTimeoutId);
             reader.removeListener('error', onReaderError);
             reader.removeListener('finish', onReaderFinish);
@@ -409,21 +418,17 @@ class Client {
         const finishOnce = Hoek.once(finish);
 
         const clientTimeout = options.timeout;
-        if (clientTimeout &&
-            clientTimeout > 0) {
-
+        if (clientTimeout && clientTimeout > 0) {
             clientTimeoutId = setTimeout(() => finishOnce(Boom.clientTimeout()), clientTimeout);
         }
 
         // Hander errors
 
         const onResError = (err) => {
-
             return finishOnce(err.isBoom ? err : Boom.internal('Payload stream error', err));
         };
 
         const onResAborted = () => {
-
             if (!res.complete) {
                 finishOnce(Boom.internal('Payload stream closed prematurely'));
             }
@@ -438,8 +443,8 @@ class Client {
         const reader = new Recorder({ maxBytes: options.maxBytes });
 
         const onReaderError = (err) => {
-
-            if (res.destroy) {                          // GZip stream has no destroy() method
+            // GZip stream has no destroy() method
+            if (res.destroy) {
                 res.destroy();
             }
 
@@ -449,16 +454,13 @@ class Client {
         reader.once('error', onReaderError);
 
         const onReaderFinish = () => {
-
             return finishOnce(null, reader.collect());
         };
 
         reader.once('finish', onReaderFinish);
 
         if (options.gunzip) {
-            const contentEncoding = options.gunzip === 'force' ?
-                'gzip' :
-                res.headers?.['content-encoding'] ?? '';
+            const contentEncoding = options.gunzip === 'force' ? 'gzip' : (res.headers?.['content-encoding'] ?? '');
 
             if (/^(x-)?gzip(\s*,\s*identity)?$/.test(contentEncoding)) {
                 const gunzip = Zlib.createGunzip();
@@ -472,12 +474,10 @@ class Client {
     }
 
     toReadableStream(payload, encoding) {
-
         return new Payload(payload, encoding);
     }
 
     parseCacheControl(field) {
-
         /*
             Cache-Control   = 1#cache-directive
             cache-directive = token [ "=" ( token / quoted-string ) ]
@@ -486,11 +486,11 @@ class Client {
         */
 
         //                             1: directive                                        =   2: token                                              3: quoted-string
-        const regex = /(?:^|(?:\s*\,\s*))([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)(?:\=(?:([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)|(?:\"((?:[^"\\]|\\.)*)\")))?/g;
+        const regex =
+            /(?:^|(?:\s*\,\s*))([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)(?:\=(?:([^\x00-\x20\(\)<>@\,;\:\\"\/\[\]\?\=\{\}\x7F]+)|(?:\"((?:[^"\\]|\\.)*)\")))?/g;
 
         const header = {};
         const error = field.replace(regex, ($0, $1, $2, $3) => {
-
             const value = $2 || $3;
             header[$1] = value ? value.toLowerCase() : true;
             return '';
@@ -504,8 +504,7 @@ class Client {
                 }
 
                 header['max-age'] = maxAge;
-            }
-            catch (err) { }
+            } catch (err) {}
         }
 
         return error ? null : header;
@@ -514,39 +513,32 @@ class Client {
     // Shortcuts
 
     get(uri, options) {
-
         return this._shortcut('GET', uri, options);
     }
 
     post(uri, options) {
-
         return this._shortcut('POST', uri, options);
     }
 
     patch(uri, options) {
-
         return this._shortcut('PATCH', uri, options);
     }
 
     put(uri, options) {
-
         return this._shortcut('PUT', uri, options);
     }
 
     delete(uri, options) {
-
         return this._shortcut('DELETE', uri, options);
     }
 
     async _shortcut(method, uri, options = {}) {
-
         const res = await this.request(method, uri, options);
 
         let payload;
         try {
             payload = await this.read(res, options);
-        }
-        catch (err) {
+        } catch (err) {
             err.data = err.data ?? {};
             err.data.res = res;
             throw err;
@@ -562,18 +554,19 @@ class Client {
             isResponseError: true,
             headers: res.headers,
             res,
-            payload
+            payload,
         };
 
-        throw new Boom.Boom(`Response Error: ${res.statusCode} ${res.statusMessage}`, { statusCode: res.statusCode, data });
+        throw new Boom.Boom(`Response Error: ${res.statusCode} ${res.statusMessage}`, {
+            statusCode: res.statusCode,
+            data,
+        });
     }
 }
-
 
 // baseUrl needs to end in a trailing / if it contains paths that need to be preserved
 
 function resolveUrl(baseUrl, path) {
-
     if (!path) {
         return baseUrl;
     }
@@ -583,11 +576,8 @@ function resolveUrl(baseUrl, path) {
     return Url.format(url);
 }
 
-
 function deferPipeUntilSocketConnects(req, stream) {
-
     const onSocket = (socket) => {
-
         if (!socket.connecting) {
             return onSocketConnect();
         }
@@ -596,13 +586,11 @@ function deferPipeUntilSocketConnects(req, stream) {
     };
 
     const onSocketConnect = () => {
-
         stream.pipe(req);
         stream.removeListener('error', onStreamError);
     };
 
     const onStreamError = (err) => {
-
         req.emit('error', err);
     };
 
@@ -610,9 +598,7 @@ function deferPipeUntilSocketConnects(req, stream) {
     stream.on('error', onStreamError);
 }
 
-
 function resolveRedirectMethod(code, method, options) {
-
     switch (code) {
         case 301:
         case 302:
@@ -633,9 +619,7 @@ function resolveRedirectMethod(code, method, options) {
     return null;
 }
 
-
 function tryParseBuffer(buffer, next) {
-
     if (buffer.length === 0) {
         return next(null, null);
     }
@@ -643,22 +627,20 @@ function tryParseBuffer(buffer, next) {
     let payload;
     try {
         payload = Bourne.parse(buffer.toString());
-    }
-    catch (err) {
+    } catch (err) {
         return next(Boom.badGateway(err.message, { payload: buffer }));
     }
 
     return next(null, payload);
 }
 
-
 function applyUrlToOptions(options, url) {
-
     options.host = url.host;
     options.origin = url.origin;
     options.searchParams = url.searchParams;
     options.protocol = url.protocol;
-    options.hostname = typeof url.hostname === 'string' && url.hostname.startsWith('[') ? url.hostname.slice(1, -1) : url.hostname;
+    options.hostname =
+        typeof url.hostname === 'string' && url.hostname.startsWith('[') ? url.hostname.slice(1, -1) : url.hostname;
     options.hash = url.hash;
     options.search = url.search;
     options.pathname = url.pathname;

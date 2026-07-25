@@ -1,8 +1,19 @@
 {
     "name": "@hapi/wreck",
-    "description": "HTTP Client Utilities",
     "version": "18.1.2",
+    "description": "HTTP Client Utilities",
+    "keywords": [
+        "client",
+        "http",
+        "utilities"
+    ],
+    "license": "BSD-3-Clause",
     "repository": "git://github.com/hapijs/wreck",
+    "files": [
+        "src",
+        "API.md",
+        "README.md"
+    ],
     "type": "module",
     "types": "src/index.d.ts",
     "exports": {
@@ -11,16 +22,15 @@
             "default": "./src/index.js"
         }
     },
-    "keywords": [
-        "utilities",
-        "http",
-        "client"
-    ],
-    "files": [
-        "src",
-        "API.md",
-        "README.md"
-    ],
+    "scripts": {
+        "test": "vitest run --coverage",
+        "typecheck": "tsc --noEmit",
+        "lint": "oxlint",
+        "lint:fix": "oxlint --fix",
+        "fmt": "oxfmt --check",
+        "fmt:fix": "oxfmt",
+        "check": "npm run lint && npm run fmt && npm run typecheck && npm test"
+    },
     "dependencies": {
         "@hapi/boom": "^10.0.1",
         "@hapi/bourne": "^4.0.1",
@@ -35,17 +45,7 @@
         "typescript": "^6.0.3",
         "vitest": "^4.1.9"
     },
-    "scripts": {
-        "test": "vitest run --coverage",
-        "typecheck": "tsc --noEmit",
-        "lint": "oxlint",
-        "lint:fix": "oxlint --fix",
-        "fmt": "oxfmt --check",
-        "fmt:fix": "oxfmt",
-        "check": "npm run lint && npm run fmt && npm run typecheck && npm test"
-    },
     "engines": {
         "node": ">=22"
-    },
-    "license": "BSD-3-Clause"
+    }
 }

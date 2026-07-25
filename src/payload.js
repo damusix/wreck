@@ -1,10 +1,7 @@
 import * as Stream from 'node:stream';
 
-
 class Payload extends Stream.Readable {
-
     constructor(payload, encoding) {
-
         super();
 
         const data = [].concat(payload || '');
@@ -21,7 +18,6 @@ class Payload extends Stream.Readable {
     }
 
     _read(size) {
-
         const chunk = this._data.slice(this._position, this._position + size);
         this.push(chunk, this._encoding);
         this._position = this._position + chunk.length;
