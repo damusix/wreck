@@ -363,4 +363,4 @@ declare namespace Client {
 
 
 declare const client: Client;
-export = client;
+export default client;
