@@ -1,7 +1,7 @@
 ## Usage
 
 ```javascript
-const Wreck = require('@hapi/wreck');
+import Wreck from '@hapi/wreck';
 
 const example = async function () {
     const { res, payload } = await Wreck.get('http://example.com');
@@ -18,7 +18,10 @@ try {
 ### Advanced
 
 ```javascript
-const Wreck = require('@hapi/wreck');
+import Http from 'node:http';
+import Https from 'node:https';
+
+import Wreck from '@hapi/wreck';
 
 const method = 'GET'; // GET, POST, PUT, DELETE
 const uri = '/';
@@ -320,7 +323,7 @@ An object containing the node agents used for pooling connections for `http` and
 For example, the following code demonstrates changing `maxSockets` on the `http` agent.
 
 ```js
-const Wreck = require('@hapi/wreck');
+import Wreck from '@hapi/wreck';
 
 Wreck.agents.http.maxSockets = 20;
 ```
@@ -328,10 +331,11 @@ Wreck.agents.http.maxSockets = 20;
 Below is another example that sets the certificate details for all HTTPS requests.
 
 ```js
-const HTTPS = require('https');
-const Wreck = require('@hapi/wreck');
+import Https from 'node:https';
 
-Wreck.agents.https = new HTTPS.Agent({
+import Wreck from '@hapi/wreck';
+
+Wreck.agents.https = new Https.Agent({
     cert,
     key,
     ca,

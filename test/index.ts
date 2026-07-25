@@ -27,12 +27,14 @@ describe('typings', () => {
 
     describe('read()', () => {
         it('resolves a Buffer unless parameterized otherwise', () => {
-            // Wrapped rather than instantiated so the assertion sees the T default resolved.
+            // Wrapped rather than instantiated so the assertion sees the T default resolved, and
+            // so the sample stream stays a type — an uninvoked arrow body needs no runtime value.
             const readDefault = (res: Stream.Readable) => Wreck.read(res);
+            const readJson = (res: Stream.Readable) => Wreck.read(res, { json: true });
 
             expectTypeOf(readDefault).returns.toEqualTypeOf<Promise<Buffer>>();
             expectTypeOf(Wreck.read<{ foo: string }>).returns.toEqualTypeOf<Promise<{ foo: string }>>();
-            expectTypeOf(Wreck.read).toBeCallableWith({} as Stream.Readable, { json: true });
+            expectTypeOf(readJson).returns.toEqualTypeOf<Promise<Buffer>>();
         });
     });
 
