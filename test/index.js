@@ -669,6 +669,30 @@ describe('request()', () => {
         ).rejects.toThrow('Received redirection without location');
     });
 
+    it('rejects redirections to an invalid location', async () => {
+        let location;
+        const handler = (req, res) => {
+            res.writeHead(302, { Location: location });
+            res.end();
+        };
+
+        const server = await internals.server(handler);
+        onTestFinished(() => server.close());
+        const url = `http://localhost:${server.address().port}`;
+
+        for (location of ['http://[invalid', '//[invalid', 'ftp://example.com/']) {
+            await expect(Wreck.get(url, { redirects: 1 }), location).rejects.toThrow(/^Invalid redirect location/);
+            await expect(
+                Wreck.get(url, { redirects: 1, headers: { authorization: 'secret' } }),
+                location,
+            ).rejects.toThrow(/^Invalid redirect location/);
+            await expect(
+                Wreck.get(url, { redirects: 1, beforeRedirect: (...args) => args.pop()() }),
+                location,
+            ).rejects.toThrow(/^Invalid redirect location/);
+        }
+    });
+
     it('handles redirections with POST stream payload', async () => {
         let gen = 0;
         const handler = async (req, res) => {

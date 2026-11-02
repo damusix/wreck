@@ -235,8 +235,22 @@ class Client {
                 return finishOnce(Boom.badGateway('Received redirection without location', _trace));
             }
 
+            // The location is attacker-controlled and parsed from an event handler, so a throw would crash the process
+
+            let parsedLocation;
+            try {
+                parsedLocation = new Url.URL(location, uri.href);
+            } catch (err) {
+                err.trace = _trace;
+                return finishOnce(Boom.badGateway('Invalid redirect location', err));
+            }
+
+            if (parsedLocation.protocol !== 'http:' && parsedLocation.protocol !== 'https:') {
+                return finishOnce(Boom.badGateway('Invalid redirect location', { trace: _trace }));
+            }
+
             if (!/^https?:/i.test(location)) {
-                location = new Url.URL(location, uri.href).href;
+                location = parsedLocation.href;
             }
 
             const redirectOptions = Hoek.clone(options, { shallow: shallowOptions });
@@ -250,7 +264,6 @@ class Client {
 
             // When redirecting cross-origin (scheme, host, or port differs), remove sensitive credential headers
             if (redirectOptions.headers) {
-                const parsedLocation = new URL(location);
                 if (uri.origin !== parsedLocation.origin) {
                     for (const header of Object.keys(redirectOptions.headers)) {
                         if (sensitiveCrossHostHeaders.has(header.toLowerCase())) {
