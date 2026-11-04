@@ -10,7 +10,6 @@ import * as Url from 'url';
 import { Boom } from '@hapi/boom';
 
 /** An HTTP request client. */
-// oxlint-disable-next-line no-redeclare -- merged with the Client namespace
 declare class Client {
     /** An object containing the node agents used for pooling connections for `http` and `https`. */
     agents: Client.Agents;
@@ -144,7 +143,6 @@ declare namespace Client {
         readonly httpsAllowUnauthorized: Https.Agent;
     }
 
-    // oxlint-disable-next-line no-redeclare -- merged with the Events namespace
     class Events extends EventEmitter {
         on(event: 'preRequest', litener: Events.preRequest): this;
         once(event: 'preRequest', litener: Events.preRequest): this;
