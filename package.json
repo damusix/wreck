@@ -31,7 +31,7 @@
         "check": "npm run lint && npm run fmt && npm run typecheck && npm test"
     },
     "dependencies": {
-        "@hapi/boom": "^10.0.1",
+        "@hapi/boom": "^11.0.0-rc.0",
         "@hapi/bourne": "^4.0.1",
         "@hapi/hoek": "^12.0.0-rc.0"
     },
