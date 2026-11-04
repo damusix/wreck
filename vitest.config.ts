@@ -16,6 +16,7 @@ export default defineConfig({
         coverage: {
             provider: 'v8',
             include: ['src/**'],
+            exclude: ['**/*.d.ts'],
             thresholds: {
                 100: true,
             },
