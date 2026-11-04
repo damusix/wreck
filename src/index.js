@@ -500,6 +500,7 @@ class Client {
 
         //                             1: directive                                        =   2: token                                              3: quoted-string
         const regex =
+            // oxlint-disable-next-line no-control-regex -- CTLs are excluded from tokens per RFC 7230
             /(?:^|(?:\s*,\s*))([^\x00-\x20()<>@,;:\\"/[\]?={}\x7F]+)(?:=(?:([^\x00-\x20()<>@,;:\\"/[\]?={}\x7F]+)|(?:"((?:[^"\\]|\\.)*)")))?/g;
 
         const header = {};
