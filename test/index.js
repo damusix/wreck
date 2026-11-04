@@ -806,7 +806,8 @@ describe('request()', () => {
             }),
         );
         expect(thrown.isBoom).toBe(true);
-        expect(thrown.message).toBe('Invalid redirect: Cancel');
+        expect(thrown.message).toBe('Invalid redirect');
+        expect(thrown.cause.message).toBe('Cancel');
     });
 
     it('calls redirected option callback on redirections', async () => {
@@ -1292,7 +1293,9 @@ describe('options.lookup', () => {
         const promise = Wreck.request('get', `http://localhost:${server.address().port}/`, {
             lookup: (_hostname, _options, callback) => callback(new Error('failed lookup')),
         });
-        await expect(promise).rejects.toThrow('Client request error: failed lookup');
+        const err = await internals.rejection(promise);
+        expect(err.message).toBe('Client request error');
+        expect(err.cause.message).toBe('failed lookup');
     });
 });
 
@@ -1476,7 +1479,8 @@ describe('read()', () => {
         res.emit('error', new Error('my error'));
 
         const err = await internals.rejection(promise);
-        expect(err.message).toBe('Payload stream error: my error');
+        expect(err.message).toBe('Payload stream error');
+        expect(err.cause.message).toBe('my error');
         expect(err.isBoom).toBe(true);
         expect(err.output.statusCode).toBe(500);
     });
@@ -1586,7 +1590,8 @@ describe('read()', () => {
             payload: stream,
         });
 
-        await expect(promiseA).rejects.toThrow(/Unable to obtain socket/);
+        const err = await internals.rejection(promiseA);
+        expect(err.cause.message).toMatch(/Unable to obtain socket/);
         expect(read).toBe(false);
 
         const handler = (req, res) => {
@@ -1615,7 +1620,8 @@ describe('read()', () => {
             stream.emit('error', new Error('Asynchronous stream error'));
         });
 
-        await expect(promiseA).rejects.toThrow(/Asynchronous stream error/);
+        const err = await internals.rejection(promiseA);
+        expect(err.cause.message).toMatch(/Asynchronous stream error/);
     });
 
     it('will handle requests with payloads using re-used sockets', async () => {
