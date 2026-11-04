@@ -517,7 +517,7 @@ class Client {
                 }
 
                 header['max-age'] = maxAge;
-            } catch (err) {}
+            } catch {}
         }
 
         return error ? null : header;
